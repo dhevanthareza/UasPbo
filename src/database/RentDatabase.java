@@ -5,7 +5,7 @@ public class RentDatabase {
 	public static Connection Koneksi() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3307/sewabuku", "root", "dhevan007");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3307/sewabuku", "root", "dhevan007"); // uri, username, password
             return connection;
         } catch(Exception e) {
             JOptionPane.showMessageDialog(null, e);

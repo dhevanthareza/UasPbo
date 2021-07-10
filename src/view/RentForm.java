@@ -4,6 +4,7 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
 import java.awt.Font;
@@ -17,13 +18,37 @@ import javax.swing.JTextField;
 import javax.swing.JButton;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
+import javax.swing.ListSelectionModel;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class RentForm {
 
 	private JFrame frame;
-	private JTable table;
 	private JScrollPane scrollPane;
-	private JTextField textField;
+	private JLabel titleLabel;
+	private JLabel dateLabel;
+	private JLabel dateValueLabel;
+	private JLabel timeLabel;
+	private JLabel timeValueLabel;
+	private JLabel biayaLabel;
+	private JLabel rpLabel;
+	private JLabel biayaValueLabel;
+	private JTextField titleTextField;
+	private JButton saveButton;
+	private JButton cancelEditButton;
+	private JButton returnButton;
+	private JButton editButton;
+	private JButton deleteButton;
+	private JTable table;
+	private DefaultTableModel tableModel;
+	private String currentEditedRentId = null;
+	private DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+	private DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
 
 	/**
 	 * Launch the application.
@@ -57,94 +82,249 @@ public class RentForm {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
-		JLabel titleLabel = new JLabel("Persewaan Buku Mawar");
+		titleLabel = new JLabel("Persewaan Buku Mawar");
 		titleLabel.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		titleLabel.setBounds(368, 11, 238, 25);
 		frame.getContentPane().add(titleLabel);
 		
-		JLabel dateLabel = new JLabel("Tanggal : ");
+		dateLabel = new JLabel("Tanggal : ");
 		dateLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
 		dateLabel.setBounds(10, 44, 72, 25);
 		frame.getContentPane().add(dateLabel);
 		
-		JLabel timeLabel = new JLabel("Jam :");
+		timeLabel = new JLabel("Jam :");
 		timeLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
 		timeLabel.setBounds(694, 44, 45, 25);
 		frame.getContentPane().add(timeLabel);
 		
-		this.buildRentTable();
-		this.buildButtonAction();
+		dateValueLabel = new JLabel("");
+		dateValueLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+		dateValueLabel.setBounds(86, 44, 147, 25);
+		frame.getContentPane().add(dateValueLabel);
+		String currentDate = LocalDate.now().format(dateFormat);
+		dateValueLabel.setText(currentDate);
+		
+		timeValueLabel = new JLabel("");
+		timeValueLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+		timeValueLabel.setBounds(745, 44, 147, 25);
+		frame.getContentPane().add(timeValueLabel);
+		String currentTime = LocalTime.now().format(timeFormat);
+		timeValueLabel.setText(currentTime);
+		
+		biayaLabel = new JLabel("Biaya : ");
+		biayaLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+		biayaLabel.setBounds(570, 104, 72, 21);
+		frame.getContentPane().add(biayaLabel);
+		
+		rpLabel = new JLabel("Rp. ");
+		rpLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+		rpLabel.setBounds(570, 134, 27, 21);
+		frame.getContentPane().add(rpLabel);
+		
+		biayaValueLabel = new JLabel("");
+		biayaValueLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+		biayaValueLabel.setBounds(607, 136, 88, 21);
+		frame.getContentPane().add(biayaValueLabel);
+		
 		this.buildForm();
+		this.buildButtonAction();
+		this.buildRentTable();
 	}
+	
 	public void buildForm() {
 		JLabel bookTitleLabel = new JLabel("Judul Buku");
 		bookTitleLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
 		bookTitleLabel.setBounds(10, 102, 72, 25);
 		frame.getContentPane().add(bookTitleLabel);
 		
-		textField = new JTextField();
-		textField.setBounds(92, 104, 176, 24);
-		frame.getContentPane().add(textField);
-		textField.setColumns(10);
+		titleTextField = new JTextField();
+		titleTextField.setBounds(92, 104, 176, 24);
+		frame.getContentPane().add(titleTextField);
+		titleTextField.setColumns(10);
 	}
+	
 	public void buildButtonAction() {
-		JButton saveButton = new JButton("Simpan");
+		saveButton = new JButton("Simpan");
 		saveButton.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void mousePressed(MouseEvent e) {
 				handleSaveButtonClick(e);
 			}
 		});
-		saveButton.setBounds(86, 207, 115, 32);
+		saveButton.setBounds(48, 195, 147, 32);
 		frame.getContentPane().add(saveButton);
 		
-		JButton returnButton = new JButton("Kembalikan");
-		returnButton.setBounds(300, 207, 115, 32);
+		cancelEditButton = new JButton("Batalkan Edit");
+		cancelEditButton.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				handleCancelEditButtonClick();
+			}
+		});
+		cancelEditButton.setBounds(205, 195, 115, 32);
+		frame.getContentPane().add(cancelEditButton);
+		this.cancelEditButton.setVisible(false);
+		
+		returnButton = new JButton("Kembalikan");
+		returnButton.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				handleReturnButtonClick(e);
+			}
+		});
+		returnButton.setBounds(527, 195, 115, 32);
 		frame.getContentPane().add(returnButton);
 		
-		JButton editButton = new JButton("Edit");
-		editButton.setBounds(519, 207, 115, 32);
+		editButton = new JButton("Edit");
+		editButton.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				handleEditButtonClick(e);
+			}
+		});
+		editButton.setBounds(652, 195, 115, 32);
 		frame.getContentPane().add(editButton);
 		
-		JButton deleteButton = new JButton("Hapus");
-		deleteButton.setBounds(736, 207, 115, 32);
+		deleteButton = new JButton("Hapus");
+		deleteButton.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				handleDeleteButtonClick(e);
+			}
+		});
+		deleteButton.setBounds(777, 195, 115, 32);
 		frame.getContentPane().add(deleteButton);
 	}
+	
+	@SuppressWarnings("serial")
 	public void buildRentTable() {
-		DefaultTableModel tableModel = new DefaultTableModel(null, new String[] {
+		tableModel = new DefaultTableModel(null, new String[] {
 			"ID", 
-			"Judul", 
+			"Judul Buku", 
 			"Tanggal Pinjam", 
 			"Tanggal Harus Kembali",
 			"Tanggal Kembali",
 			"Denda",
 			"Biaya Sewa"
-		});
+		}) {
+			@Override
+		    public boolean isCellEditable(int row, int column) {
+		       return false;
+		    }
+		};
 		
 		scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 250, 928, 233);
+		scrollPane.setBounds(10, 258, 928, 225);
 		frame.getContentPane().add(scrollPane);
 		
 		table = new JTable();
-		table.setEnabled(false);
+		table.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				handleRowClicked();
+			}
+		});
+		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		table.setModel(tableModel);
 		scrollPane.setViewportView(table);
-		
-		JLabel bookTitleLabel = new JLabel("Judul Buku");
-		bookTitleLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		bookTitleLabel.setBounds(10, 102, 72, 25);
-		frame.getContentPane().add(bookTitleLabel);
-		
-		textField = new JTextField();
-		textField.setBounds(92, 104, 176, 24);
-		frame.getContentPane().add(textField);
-		textField.setColumns(10);
+	
+		this.fetcTableData();
+	}
+	public void fetcTableData() {
 		ArrayList<Rent> rentList = RentRepository.fetchRents();
 		for(Rent rent : rentList) {
 			tableModel.addRow(rent.toRow());
 		}
 	}
+	public void handleRowClicked() {
+		int row = table.getSelectedRow();
+		String biayaSewa = (String) this.tableModel.getValueAt(row, 6);
+		this.biayaValueLabel.setText(biayaSewa);
+	}
 	public void handleSaveButtonClick(MouseEvent e) {
-		System.out.print("dsdasdas");
+		int saveRent = 0;
+		if(this.currentEditedRentId == null) {
+			saveRent = RentRepository.addRent(titleTextField.getText());
+		} else {
+			saveRent = RentRepository.updateBookTitle(this.currentEditedRentId, this.titleTextField.getText());
+		}
+		if(saveRent == 1) {
+			JOptionPane.showMessageDialog(null, "Data Berhasil disimpan");
+			System.out.print("Berhasil");
+			this.titleTextField.setText("");
+			this.cancelEditButton.setVisible(false);
+			this.saveButton.setText("Simpan");
+			this.currentEditedRentId = null;
+			this.tableModel.setRowCount(0);
+			this.fetcTableData();
+		} else {
+			JOptionPane.showMessageDialog(null, "Data Gagal disimpan");
+		}
+	}
+	public void handleDeleteButtonClick(MouseEvent e) {
+		int row = this.table.getSelectedRow();
+		if(row == -1) {
+			JOptionPane.showMessageDialog(null, "Pilih salah satu untuk dihapus");
+			return;
+		}
+		String rentId = this.tableModel.getValueAt(row, 0).toString();
+		int removeRent = RentRepository.removeRent(rentId);
+		if(removeRent == 1) {
+			JOptionPane.showMessageDialog(null, "Data Berhasil dihapus");
+			this.tableModel.setRowCount(0);
+			this.fetcTableData();
+		} else {
+			JOptionPane.showMessageDialog(null, "Data Gagal dihapus");
+		}
+	}
+	public void handleReturnButtonClick(MouseEvent e) {
+		int row = this.table.getSelectedRow();
+		if(row == -1) {
+			JOptionPane.showMessageDialog(null, "Pilih salah satu untuk dikembalikan");
+			return;
+		}
+		String tanggalKembali = (String) this.tableModel.getValueAt(row, 4);
+		if(tanggalKembali != null) {
+			JOptionPane.showMessageDialog(null, "Buku sudah pernah dikembalikan");
+			return;
+		}
+		String rentId = this.tableModel.getValueAt(row, 0).toString();
+		LocalDate tanggalHarusKembali = LocalDate.parse(tableModel.getValueAt(row, 3).toString(), this.dateFormat);
+		int returnRent = RentRepository.returnRent(rentId, tanggalHarusKembali);
+		if(returnRent == 1) {
+			JOptionPane.showMessageDialog(null, "Buku Berhasil dikembalikan");
+			tableModel.setRowCount(0);
+			this.fetcTableData();
+		} else {
+			JOptionPane.showMessageDialog(null, "Buku gagal dikembalikan");
+		}
+	}
+	public void handleEditButtonClick(MouseEvent e) {
+		int row = table.getSelectedRow();
+		if(row == -1) {
+			JOptionPane.showMessageDialog(null, "Pilih salah satu untuk dikembalikan");
+			return;
+		}
+		String rentId = (String) this.tableModel.getValueAt(row, 0);
+		String judul = (String) this.tableModel.getValueAt(row, 1);
+		String tanggalPinjam = (String) this.tableModel.getValueAt(row, 2);
+		String tanggalHarusKembali = (String) this.tableModel.getValueAt(row, 3);
+		String tanggalKembali = (String) this.tableModel.getValueAt(row, 4);
+		String denda = (String) this.tableModel.getValueAt(row, 5);
+		String biayaSewa = (String) this.tableModel.getValueAt(row, 6);
+		if(rentId != null && judul != null && tanggalPinjam != null && tanggalHarusKembali != null && tanggalKembali != null && denda != null && biayaSewa != null) {
+			JOptionPane.showMessageDialog(null, "Data sudah lengkap dan tidak bisa diedit");
+			return;
+		}
+		this.titleTextField.setText(judul);
+		this.currentEditedRentId = rentId;
+		this.saveButton.setText("Simpan Perubahan");
+		this.cancelEditButton.setVisible(true);
+	}
+	public void handleCancelEditButtonClick() {
+		this.cancelEditButton.setVisible(false);
+		this.currentEditedRentId = null;
+		this.saveButton.setText("Simpan");
+		this.titleTextField.setText("");
 	}
 }

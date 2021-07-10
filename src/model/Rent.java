@@ -20,7 +20,7 @@ public class Rent {
 			this.tanggalPinjam != null ? this.tanggalPinjam.format(dateFormat) : null,
 			this.tanggalHarusKembali != null ? this.tanggalHarusKembali.format(dateFormat) : null,
 			this.tanggalKembali != null ? this.tanggalKembali.format(dateFormat) : null,
-			this.denda.toString(),
+			this.denda != null ? this.denda.toString() : null,
 			this.biayaSewa.toString()
 		};
 		return data;
