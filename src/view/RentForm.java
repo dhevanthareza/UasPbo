@@ -53,7 +53,7 @@ public class RentForm {
 	/**
 	 * Launch the application.
 	 */
-	public static void openRentForm() {
+	public static void  main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {

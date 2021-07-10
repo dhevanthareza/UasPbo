@@ -14,6 +14,7 @@ public class RentRepository {
 	public static PreparedStatement pst;
     public static ResultSet rs;
     static Connection cn = database.RentDatabase.Koneksi();
+    
 	public static  ArrayList<Rent> fetchRents() {
 		ArrayList<Rent> rentList = new ArrayList<Rent>();
 		try {
