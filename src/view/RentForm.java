@@ -57,6 +57,7 @@ public class RentForm {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+					System.out.println(System.getProperty("java.runtime.version"));
 					RentForm window = new RentForm();
 					window.frame.setVisible(true);
 				} catch (Exception e) {
